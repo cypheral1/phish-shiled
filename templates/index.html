@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Phishing Email Detector</title>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+    <div class="container">
+        <header class="header">
+            <div class="header-content">
+                <h1>🛡️ Phishing Email Detector</h1>
+                <p class="subtitle">Advanced AI-Powered Email Security Analysis</p>
+            </div>
+        </header>
+
+        <div class="main-content">
+            <nav class="tabs">
+                <button class="tab-btn active" data-tab="text-input">📝 Paste Email</button>
+                <button class="tab-btn" data-tab="file-upload">📎 Upload File</button>
+                <button class="tab-btn" data-tab="sample">📋 Try Sample</button>
+            </nav>
+
+            <!-- TEXT INPUT TAB -->
+            <div id="text-input" class="tab-content active">
+                <div class="input-section">
+                    <label for="email-text">Paste email content:</label>
+                    <textarea id="email-text" placeholder="From: sender@example.com&#10;Subject: Important Notice&#10;&#10;Dear User,..."></textarea>
+                    <button id="analyze-btn" class="btn btn-primary">Analyze Email</button>
+                </div>
+            </div>
+
+            <!-- FILE UPLOAD TAB -->
+            <div id="file-upload" class="tab-content">
+                <div class="upload-section">
+                    <div class="upload-area" id="upload-area">
+                        <p>📁 Drag & drop email file here</p>
+                        <p class="small">or click to browse</p>
+                        <input type="file" id="file-input" accept=".txt,.eml,.msg" style="display:none;">
+                    </div>
+                    <div id="file-name" class="file-name"></div>
+                    <button id="upload-btn" class="btn btn-primary" style="margin-top:15px;">Upload & Analyze</button>
+                </div>
+            </div>
+
+            <!-- SAMPLE TAB -->
+            <div id="sample" class="tab-content">
+                <div class="sample-section">
+                    <p>Click below to load a sample phishing email for testing:</p>
+                    <button id="load-sample-btn" class="btn btn-primary">Load Sample Email</button>
+                </div>
+            </div>
+
+            <!-- LOADING SPINNER -->
+            <div id="loading" class="loading hidden">
+                <div class="spinner"></div>
+                <p>Analyzing email...</p>
+            </div>
+
+            <!-- RESULTS SECTION -->
+            <div id="results" class="results hidden">
+                <div class="results-header">
+                    <h2>Analysis Results</h2>
+                    <button id="close-results" class="btn-icon">✕</button>
+                </div>
+
+                <div class="risk-score-section">
+                    <div class="risk-gauge">
+                        <div id="risk-circle" class="risk-circle"></div>
+                        <div class="risk-label">
+                            <div id="risk-value" class="risk-value">0</div>
+                            <div class="risk-text">/100</div>
+                        </div>
+                    </div>
+                    <div class="risk-info">
+                        <h3>Risk Level: <span id="risk-level">LOW</span></h3>
+                        <p id="risk-description"></p>
+                    </div>
+                </div>
+
+                <div class="details-section">
+                    <div class="detail-box">
+                        <h4>📧 Email Headers</h4>
+                        <div id="headers-info" class="info-content"></div>
+                    </div>
+
+                    <div class="detail-box">
+                        <h4>⚠️ Risk Indicators</h4>
+                        <ul id="reasons-list" class="reasons-list"></ul>
+                    </div>
+
+                    <div class="detail-box" id="urls-box" style="display:none;">
+                        <h4>🔗 Detected URLs</h4>
+                        <div id="urls-list"></div>
+                    </div>
+
+                    <div class="detail-box" id="attachments-box" style="display:none;">
+                        <h4>📎 Attachments</h4>
+                        <ul id="attachments-list" class="attachments-list"></ul>
+                    </div>
+
+                    <div class="detail-box">
+                        <h4>📊 Analysis Breakdown</h4>
+                        <div id="analysis-stats" class="analysis-stats"></div>
+                    </div>
+                </div>
+
+                <div class="action-buttons">
+                    <button id="reset-btn" class="btn btn-secondary">Analyze Another Email</button>
+                    <button id="export-btn" class="btn btn-secondary">📥 Export Report</button>
+                </div>
+            </div>
+        </div>
+
+        <footer class="footer">
+            <p>🔒 All analysis is done locally. No data is stored or sent anywhere.</p>
+            <p>Phishing Shield © 2024 | Advanced Email Security Detection</p>
+        </footer>
+    </div>
+
+    <script src="/static/script.js"></script>
+</body>
+</html>

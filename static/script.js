@@ -8,6 +8,20 @@ class PhishAnalyzer {
         this.setupEventListeners();
         this.initializeUI();
     }
+    
+    // Validate file size (max 100MB)
+    const maxSize = 100 * 1024 * 1024;
+    if (file.size > maxSize) {
+        showNotification('File is too large. Maximum size: 100MB', 'warning');
+        return;
+    }
+    
+    // Show file info
+    const fileSize = (file.size / 1024).toFixed(2);
+    console.log(`📁 Uploading: ${file.name} (${fileSize} KB)`);
+    
+    await analyzeFile(file);
+});
 
     setupElements() {
         // Tab toggles
@@ -382,3 +396,168 @@ class PhishAnalyzer {
 document.addEventListener('DOMContentLoaded', () => {
     new PhishAnalyzer();
 });
+
+// ===== NOTIFICATIONS =====
+function showNotification(message, type = 'info') {
+    // Create a simple notification (can be enhanced with a toast library)
+    const notification = document.createElement('div');
+    notification.style.cssText = `
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        background: ${type === 'danger' ? '#ff1744' : type === 'warning' ? '#f59e0b' : '#00ff88'};
+        color: ${type === 'danger' ? 'white' : type === 'warning' ? '#000' : '#000'};
+        padding: 15px 25px;
+        border-radius: 8px;
+        font-weight: bold;
+        z-index: 3000;
+        animation: slideIn 0.3s ease;
+        box-shadow: 0 0 20px rgba(0, 0, 0, 0.3);
+    `;
+    notification.textContent = message;
+    document.body.appendChild(notification);
+    
+    setTimeout(() => {
+        notification.style.animation = 'slideOut 0.3s ease';
+        setTimeout(() => notification.remove(), 300);
+    }, 3000);
+}
+
+// ===== ADD ANIMATIONS TO STYLESHEET =====
+const style = document.createElement('style');
+style.textContent = `
+    @keyframes slideIn {
+        from {
+            transform: translateX(400px);
+            opacity: 0;
+        }
+        to {
+            transform: translateX(0);
+            opacity: 1;
+        }
+    }
+    
+    @keyframes slideOut {
+        from {
+            transform: translateX(0);
+            opacity: 1;
+        }
+        to {
+            transform: translateX(400px);
+            opacity: 0;
+        }
+    }
+`;
+document.head.appendChild(style);
+
+// ===== PARTICLE ANIMATION BACKGROUND =====
+function createParticles() {
+    const container = document.body;
+    const particleCount = 30;
+    
+    for (let i = 0; i < particleCount; i++) {
+        const particle = document.createElement('div');
+        particle.style.cssText = `
+            position: fixed;
+            pointer-events: none;
+            width: ${Math.random() * 3 + 1}px;
+            height: ${Math.random() * 3 + 1}px;
+            background: rgba(0, 255, 136, ${Math.random() * 0.5 + 0.3});
+            border-radius: 50%;
+            left: ${Math.random() * 100}%;
+            top: ${Math.random() * 100}%;
+            animation: float ${Math.random() * 10 + 5}s ease-in-out infinite;
+            z-index: 1;
+        `;
+        container.appendChild(particle);
+    }
+}
+
+// Initialize particles on load
+window.addEventListener('load', () => {
+    createParticles();
+    
+    // Add some interactive effects
+    document.addEventListener('mousemove', (e) => {
+        // Optional: Add parallax or other mouse tracking effects
+    });
+});
+
+// ===== KEYBOARD SHORTCUTS =====
+document.addEventListener('keydown', (e) => {
+    // Ctrl+Enter to analyze
+    if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+        if (document.activeElement === emailInput) {
+            analyzeBtn.click();
+        }
+    }
+});
+
+// ===== LOCALSTORAGE PERSISTENCE =====
+function saveHistory() {
+    localStorage.setItem('phishingHistory', JSON.stringify(analysisHistory.slice(0, 50)));
+}
+
+function loadHistoryFromStorage() {
+    const stored = localStorage.getItem('phishingHistory');
+    if (stored) {
+        try {
+            analysisHistory = JSON.parse(stored);
+        } catch (e) {
+            console.error('Failed to load history:', e);
+        }
+    }
+}
+
+// Save history when analysis is added
+const originalAnalyze = sendAnalysisRequest;
+sendAnalysisRequest = async function(data) {
+    await originalAnalyze(data);
+    saveHistory();
+};
+
+// Load history on startup
+window.addEventListener('load', () => {
+    loadHistoryFromStorage();
+});
+
+// ===== EXPORT ANALYSIS =====
+function exportAnalysisAsJSON(result) {
+    const dataStr = JSON.stringify(result, null, 2);
+    const dataBlob = new Blob([dataStr], { type: 'application/json' });
+    const url = URL.createObjectURL(dataBlob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `phishing-analysis-${new Date().getTime()}.json`;
+    link.click();
+    URL.revokeObjectURL(url);
+}
+
+// ===== ADD EXPORT BUTTON FUNCTIONALITY =====
+window.addEventListener('load', () => {
+    const resultsHeader = document.querySelector('.results-header');
+    if (resultsHeader && !document.getElementById('exportBtn')) {
+        const exportBtn = document.createElement('button');
+        exportBtn.id = 'exportBtn';
+        exportBtn.className = 'btn-close';
+        exportBtn.innerHTML = '📥';
+        exportBtn.style.marginRight = '15px';
+        exportBtn.title = 'Export Analysis';
+        exportBtn.addEventListener('click', () => {
+            const scoreNumber = document.getElementById('scoreNumber').textContent;
+            if (scoreNumber) {
+                exportAnalysisAsJSON({
+                    score: scoreNumber,
+                    riskLevel: document.getElementById('riskLevel').textContent,
+                    from: document.getElementById('fromValue').textContent,
+                    subject: document.getElementById('subjectValue').textContent,
+                    timestamp: new Date().toISOString()
+                });
+                showNotification('Analysis exported successfully!', 'info');
+            }
+        });
+        resultsHeader.insertBefore(exportBtn, closeResultsBtn);
+    }
+});
+
+console.log('🛡️ Phishing Shield loaded successfully!');

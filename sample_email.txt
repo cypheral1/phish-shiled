@@ -1,17 +1,10 @@
 From: "PayPal Support" <support@paypa1.com>
-Subject: URGENT! Verify your account NOW!
+Subject: Urgent! Verify your account now
 
-Dear User,
-
-Your PayPal account has been flagged due to unusual activity. 
-Your account will be SUSPENDED if you don't verify immediately!
-
-CLICK HERE to verify: http://bit.ly/paypal-verify-now
-
-We also detected a login attempt from an unknown device.
-Update your security information NOW!
+Dear user,
+Your PayPal account will be suspended if you don’t verify immediately.
+Click here to verify: http://bit.ly/securelogin
 
 Best regards,
 PayPal Security Team
-
-Attachment: verify-account.exe
+Attachment: verify.exe

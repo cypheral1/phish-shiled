@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Phishing Email Detector - Hero Page</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='hero-style.css') }}">
+</head>
+<body>
+    <!-- Animated Background -->
+    <div class="background-container">
+        <div class="gradient-bg"></div>
+        <div class="scanlines"></div>
+        <div class="particles-container" id="particlesContainer"></div>
+        <div class="grid-overlay"></div>
+    </div>
+
+    <!-- Navigation Bar -->
+    <nav class="navbar">
+        <div class="nav-container">
+            <div class="logo">
+                <span class="logo-icon">🛡️</span>
+                <span class="logo-text">Phishing Shield</span>
+            </div>
+            <div class="nav-links">
+                <a href="#features" class="nav-link">Features</a>
+                <a href="#how-it-works" class="nav-link">How It Works</a>
+                <a href="#about" class="nav-link">About</a>
+                <a href="/" class="nav-link btn-start">Get Started</a>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <section class="hero">
+        <div class="hero-content">
+            <!-- Main Title -->
+            <div class="hero-title-container">
+                <h1 class="hero-title">
+                    Phishing Email <span class="gradient-text">Detector</span>
+                </h1>
+                <p class="hero-subtitle">Detect Deception. Protect Communication.</p>
+            </div>
+
+            <!-- Risk Score Card -->
+            <div class="risk-score-container">
+                <div class="score-card">
+                    <div class="card-header">
+                        <span class="card-label">⚠️ RISK ANALYSIS</span>
+                        <span class="card-sublabel">AI-Powered Detection</span>
+                    </div>
+
+                    <!-- Circular Progress -->
+                    <div class="circular-progress-wrapper">
+                        <svg class="circular-progress" viewBox="0 0 180 180">
+                            <!-- Background circle -->
+                            <circle cx="90" cy="90" r="85" class="progress-bg"></circle>
+                            <!-- Animated progress circle -->
+                            <circle cx="90" cy="90" r="85" class="progress-fill"></circle>
+                            <!-- Glow effect -->
+                            <circle cx="90" cy="90" r="85" class="progress-glow"></circle>
+                        </svg>
+                        <div class="score-display">
+                            <span class="score-value">82</span>
+                            <span class="score-unit">%</span>
+                        </div>
+                    </div>
+
+                    <!-- Analysis Bars -->
+                    <div class="analysis-section">
+                        <div class="analysis-item">
+                            <div class="analysis-label">
+                                <span class="analysis-icon">🔍</span>
+                                <span>Pattern Analysis</span>
+                            </div>
+                            <div class="progress-bar">
+                                <div class="progress-fill-bar" style="width: 85%;"></div>
+                            </div>
+                            <span class="analysis-value">85%</span>
+                        </div>
+
+                        <div class="analysis-item">
+                            <div class="analysis-label">
+                                <span class="analysis-icon">🧠</span>
+                                <span>URL Detection</span>
+                            </div>
+                            <div class="progress-bar">
+                                <div class="progress-fill-bar" style="width: 78%;"></div>
+                            </div>
+                            <span class="analysis-value">78%</span>
+                        </div>
+
+                        <div class="analysis-item">
+                            <div class="analysis-label">
+                                <span class="analysis-icon">🛡️</span>
+                                <span>Content Scan</span>
+                            </div>
+                            <div class="progress-bar">
+                                <div class="progress-fill-bar" style="width: 90%;"></div>
+                            </div>
+                            <span class="analysis-value">90%</span>
+                        </div>
+                    </div>
+
+                    <!-- Risk Level Badge -->
+                    <div class="risk-level-badge critical">
+                        <span class="risk-indicator"></span>
+                        <span class="risk-text">CRITICAL THREAT</span>
+                    </div>
+
+                    <!-- Details -->
+                    <div class="card-details">
+                        <div class="detail-item">
+                            <span class="detail-icon">⏱️</span>
+                            <span class="detail-text">Detection: <strong>0.3s</strong></span>
+                        </div>
+                        <div class="detail-item">
+                            <span class="detail-icon">✅</span>
+                            <span class="detail-text">Accuracy: <strong>94%</strong></span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- CTA Button -->
+            <div class="cta-container">
+                <a href="/" class="btn btn-primary btn-large">
+                    <span class="btn-icon">🚀</span>
+                    <span class="btn-text">Start Detection</span>
+                    <span class="btn-shine"></span>
+                </a>
+                <p class="cta-subtext">Free • No Sign-up Required • Instant Analysis</p>
+            </div>
+        </div>
+
+        <!-- Floating Elements -->
+        <div class="floating-elements">
+            <div class="float-element float-1">📧</div>
+            <div class="float-element float-2">🔒</div>
+            <div class="float-element float-3">⚡</div>
+            <div class="float-element float-4">🎯</div>
+        </div>
+    </section>
+
+    <!-- Features Section -->
+    <section id="features" class="features-section">
+        <h2 class="section-title">Advanced <span class="gradient-text">Detection Features</span></h2>
+        
+        <div class="features-grid">
+            <div class="feature-card">
+                <div class="feature-icon">🔗</div>
+                <h3>URL Analysis</h3>
+                <p>Detects malicious links, shortened URLs, and lookalike domains</p>
+            </div>
+
+            <div class="feature-card">
+                <div class="feature-icon">📝</div>
+                <h3>Content Scanning</h3>
+                <p>Analyzes email text for phishing patterns and red flags</p>
+            </div>
+
+            <div class="feature-card">
+                <div class="feature-icon">🎓</div>
+                <h3>AI Intelligence</h3>
+                <p>Machine learning-powered detection with real-time updates</p>
+            </div>
+
+            <div class="feature-card">
+                <div class="feature-icon">📊</div>
+                <h3>Detailed Reports</h3>
+                <p>Get comprehensive analysis with actionable insights</p>
+            </div>
+
+            <div class="feature-card">
+                <div class="feature-icon">💾</div>
+                <h3>File Support</h3>
+                <p>Upload .txt, .eml, and .msg email files for analysis</p>
+            </div>
+
+            <div class="feature-card">
+                <div class="feature-icon">🔐</div>
+                <h3>Privacy First</h3>
+                <p>Your emails are never stored or shared with third parties</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- How It Works Section -->
+    <section id="how-it-works" class="how-it-works">
+        <h2 class="section-title">How It <span class="gradient-text">Works</span></h2>
+        
+        <div class="steps-container">
+            <div class="step-card">
+                <div class="step-number">01</div>
+                <h3>Paste or Upload</h3>
+                <p>Copy your email text or upload .txt/.eml file directly</p>
+                <div class="step-icon">📋</div>
+            </div>
+
+            <div class="step-arrow">→</div>
+
+            <div class="step-card">
+                <div class="step-number">02</div>
+                <h3>Analyze</h3>
+                <p>Our AI scans for phishing indicators instantly</p>
+                <div class="step-icon">🔍</div>
+            </div>
+
+            <div class="step-arrow">→</div>
+
+            <div class="step-card">
+                <div class="step-number">03</div>
+                <h3>Get Results</h3>
+                <p>Receive detailed risk score and actionable recommendations</p>
+                <div class="step-icon">📊</div>
+            </div>
+        </div>
+    </section>
+
+    <!-- About Section -->
+    <section id="about" class="about-section">
+        <div class="about-content">
+            <h2 class="section-title">About <span class="gradient-text">Phishing Shield</span></h2>
+            <p class="about-text">
+                Phishing Shield is an advanced email security tool developed by <strong>Cicada Tech</strong> to help 
+                individuals and organizations identify phishing attempts before they cause damage. Using sophisticated 
+                pattern recognition and AI-powered analysis, we detect deception and protect communication channels 
+                from cyber threats.
+            </p>
+            <div class="about-stats">
+                <div class="stat">
+                    <span class="stat-number">10K+</span>
+                    <span class="stat-label">Emails Analyzed</span>
+                </div>
+                <div class="stat">
+                    <span class="stat-number">94%</span>
+                    <span class="stat-label">Accuracy Rate</span>
+                </div>
+                <div class="stat">
+                    <span class="stat-number">0.3s</span>
+                    <span class="stat-label">Avg Detection</span>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="footer-content">
+            <div class="footer-section">
+                <h4>Phishing Shield</h4>
+                <p>Detect Deception. Protect Communication.</p>
+            </div>
+            <div class="footer-section">
+                <h4>Quick Links</h4>
+                <ul>
+                    <li><a href="#features">Features</a></li>
+                    <li><a href="#how-it-works">How It Works</a></li>
+                    <li><a href="/">Detector</a></li>
+                </ul>
+            </div>
+            <div class="footer-section">
+                <h4>Made With 💜</h4>
+                <p>By <strong>Cicada Tech</strong></p>
+                <p class="footer-gsa">GSA Hackathon 2024</p>
+            </div>
+        </div>
+        <div class="footer-bottom">
+            <p>&copy; 2024 Phishing Shield. All rights reserved. | Privacy First • No Tracking</p>
+        </div>
+    </footer>
+
+    <script src="{{ url_for('static', filename='hero-script.js') }}"></script>
+</body>
+</html>

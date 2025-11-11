@@ -3,120 +3,191 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Phishing Email Detector</title>
+    <title>PhishShield - Email Security Analyzer</title>
     <link rel="stylesheet" href="/static/style.css">
 </head>
 <body>
-    <div class="container">
-        <header class="header">
-            <div class="header-content">
-                <h1>🛡️ Phishing Email Detector</h1>
-                <p class="subtitle">Advanced AI-Powered Email Security Analysis</p>
+    <!-- Sidebar Navigation -->
+    <aside class="sidebar">
+        <div class="sidebar-header">
+            <div class="logo">
+                <div class="logo-icon">🛡️</div>
+                <span class="logo-text">PhishShield</span>
+            </div>
+        </div>
+        <nav class="sidebar-nav">
+            <a href="#" class="nav-item active">
+                <span class="nav-icon">📧</span>
+                <span class="nav-label">Email Analysis</span>
+            </a>
+            <a href="#" class="nav-item">
+                <span class="nav-icon">📊</span>
+                <span class="nav-label">Dashboard</span>
+            </a>
+            <a href="#" class="nav-item">
+                <span class="nav-icon">⚙️</span>
+                <span class="nav-label">Settings</span>
+            </a>
+            <a href="#" class="nav-item">
+                <span class="nav-icon">📚</span>
+                <span class="nav-label">Help</span>
+            </a>
+        </nav>
+    </aside>
+
+    <!-- Main Content -->
+    <div class="main-wrapper">
+        <!-- Top Header Bar -->
+        <header class="top-header">
+            <div class="header-left">
+                <h1 class="page-title">Email Security Analyzer</h1>
+                <p class="page-subtitle">Advanced Threat Detection & Analysis</p>
+            </div>
+            <div class="header-right">
+                <div class="status-badge">
+                    <span class="status-dot"></span>
+                    <span class="status-text">System Online</span>
+                </div>
             </div>
         </header>
 
-        <div class="main-content">
-            <nav class="tabs">
-                <button class="tab-btn active" data-tab="text-input">📝 Paste Email</button>
-                <button class="tab-btn" data-tab="file-upload">📎 Upload File</button>
-                <button class="tab-btn" data-tab="sample">📋 Try Sample</button>
-            </nav>
-
-            <!-- TEXT INPUT TAB -->
-            <div id="text-input" class="tab-content active">
-                <div class="input-section">
-                    <label for="email-text">Paste email content:</label>
-                    <textarea id="email-text" placeholder="From: sender@example.com&#10;Subject: Important Notice&#10;&#10;Dear User,..."></textarea>
-                    <button id="analyze-btn" class="btn btn-primary">Analyze Email</button>
-                </div>
-            </div>
-
-            <!-- FILE UPLOAD TAB -->
-            <div id="file-upload" class="tab-content">
-                <div class="upload-section">
-                    <div class="upload-area" id="upload-area">
-                        <p>📁 Drag & drop email file here</p>
-                        <p class="small">or click to browse</p>
-                        <input type="file" id="file-input" accept=".txt,.eml,.msg" style="display:none;">
-                    </div>
-                    <div id="file-name" class="file-name"></div>
-                    <button id="upload-btn" class="btn btn-primary" style="margin-top:15px;">Upload & Analyze</button>
-                </div>
-            </div>
-
-            <!-- SAMPLE TAB -->
-            <div id="sample" class="tab-content">
-                <div class="sample-section">
-                    <p>Click below to load a sample phishing email for testing:</p>
-                    <button id="load-sample-btn" class="btn btn-primary">Load Sample Email</button>
-                </div>
-            </div>
-
-            <!-- LOADING SPINNER -->
-            <div id="loading" class="loading hidden">
-                <div class="spinner"></div>
-                <p>Analyzing email...</p>
-            </div>
-
-            <!-- RESULTS SECTION -->
-            <div id="results" class="results hidden">
-                <div class="results-header">
-                    <h2>Analysis Results</h2>
-                    <button id="close-results" class="btn-icon">✕</button>
-                </div>
-
-                <div class="risk-score-section">
-                    <div class="risk-gauge">
-                        <div id="risk-circle" class="risk-circle"></div>
-                        <div class="risk-label">
-                            <div id="risk-value" class="risk-value">0</div>
-                            <div class="risk-text">/100</div>
+        <!-- Main Content Area -->
+        <div class="content-area">
+            <div class="input-output-layout">
+                <!-- LEFT PANEL: INPUT -->
+                <div class="input-panel">
+                    <div class="panel-header">
+                        <h2>📧 Email Input</h2>
+                        <div class="panel-tabs">
+                            <button class="tab-toggle active" data-tab="text-mode">Text</button>
+                            <button class="tab-toggle" data-tab="file-mode">File</button>
+                            <button class="tab-toggle" data-tab="sample-mode">Sample</button>
                         </div>
                     </div>
-                    <div class="risk-info">
-                        <h3>Risk Level: <span id="risk-level">LOW</span></h3>
-                        <p id="risk-description"></p>
+
+                    <!-- TEXT MODE -->
+                    <div id="text-mode" class="input-mode active">
+                        <div class="mode-content">
+                            <label class="input-label">Paste email content:</label>
+                            <textarea id="email-text" class="email-textarea" placeholder="From: sender@example.com&#10;Subject: Important Notice&#10;To: recipient@company.com&#10;&#10;Dear User,&#10;Please verify your account..."></textarea>
+                            <button id="analyze-btn" class="btn btn-analyze">
+                                <span class="btn-icon">🔍</span>
+                                <span>Analyze Email</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- FILE MODE -->
+                    <div id="file-mode" class="input-mode">
+                        <div class="mode-content">
+                            <div class="upload-zone" id="upload-area">
+                                <div class="upload-icon">📁</div>
+                                <p class="upload-text">Drag and drop email file here</p>
+                                <p class="upload-subtext">or click to browse</p>
+                                <input type="file" id="file-input" accept=".txt,.eml,.msg" style="display:none;">
+                            </div>
+                            <div id="file-name" class="file-info" style="display:none;"></div>
+                            <button id="upload-btn" class="btn btn-analyze" style="margin-top:15px;">
+                                <span class="btn-icon">📤</span>
+                                <span>Upload & Analyze</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- SAMPLE MODE -->
+                    <div id="sample-mode" class="input-mode">
+                        <div class="mode-content">
+                            <p class="sample-text">Load a pre-configured phishing email sample for testing:</p>
+                            <button id="load-sample-btn" class="btn btn-analyze">
+                                <span class="btn-icon">⚡</span>
+                                <span>Load Sample Email</span>
+                            </button>
+                        </div>
                     </div>
                 </div>
 
-                <div class="details-section">
-                    <div class="detail-box">
-                        <h4>📧 Email Headers</h4>
-                        <div id="headers-info" class="info-content"></div>
+                <!-- RIGHT PANEL: OUTPUT -->
+                <div class="output-panel">
+                    <!-- EMPTY STATE -->
+                    <div id="empty-state" class="output-state empty">
+                        <div class="empty-icon">🛡️</div>
+                        <h3>Ready to Analyze</h3>
+                        <p>Paste an email or upload a file to begin threat analysis</p>
                     </div>
 
-                    <div class="detail-box">
-                        <h4>⚠️ Risk Indicators</h4>
-                        <ul id="reasons-list" class="reasons-list"></ul>
+                    <!-- LOADING STATE -->
+                    <div id="loading" class="output-state loading hidden">
+                        <div class="loader">
+                            <div class="loader-spinner"></div>
+                        </div>
+                        <p class="loader-text">Analyzing email...</p>
                     </div>
 
-                    <div class="detail-box" id="urls-box" style="display:none;">
-                        <h4>🔗 Detected URLs</h4>
-                        <div id="urls-list"></div>
-                    </div>
+                    <!-- RESULTS STATE -->
+                    <div id="results" class="output-state results hidden">
+                        <div class="results-content">
+                            <!-- THREAT SCORE -->
+                            <div class="threat-score-card">
+                                <div class="score-gauge">
+                                    <svg class="gauge-svg" viewBox="0 0 200 200">
+                                        <circle cx="100" cy="100" r="90" class="gauge-bg"></circle>
+                                        <circle id="gauge-circle" cx="100" cy="100" r="90" class="gauge-fill"></circle>
+                                        <text x="100" y="100" class="gauge-text" id="score-text">0</text>
+                                    </svg>
+                                </div>
+                                <div class="score-info">
+                                    <h3 id="threat-level" class="threat-level-text">UNKNOWN</h3>
+                                    <p id="threat-message" class="threat-message"></p>
+                                </div>
+                            </div>
 
-                    <div class="detail-box" id="attachments-box" style="display:none;">
-                        <h4>📎 Attachments</h4>
-                        <ul id="attachments-list" class="attachments-list"></ul>
-                    </div>
+                            <!-- THREAT INDICATORS -->
+                            <div class="indicators-card">
+                                <h4 class="card-title">🔴 Threat Indicators</h4>
+                                <ul id="indicators-list" class="indicators-list"></ul>
+                            </div>
 
-                    <div class="detail-box">
-                        <h4>📊 Analysis Breakdown</h4>
-                        <div id="analysis-stats" class="analysis-stats"></div>
-                    </div>
-                </div>
+                            <!-- EMAIL METADATA -->
+                            <div class="metadata-card">
+                                <h4 class="card-title">📧 Email Metadata</h4>
+                                <div class="metadata-grid">
+                                    <div class="metadata-item">
+                                        <span class="metadata-label">From:</span>
+                                        <span id="meta-from" class="metadata-value">—</span>
+                                    </div>
+                                    <div class="metadata-item">
+                                        <span class="metadata-label">To:</span>
+                                        <span id="meta-to" class="metadata-value">—</span>
+                                    </div>
+                                    <div class="metadata-item">
+                                        <span class="metadata-label">Subject:</span>
+                                        <span id="meta-subject" class="metadata-value">—</span>
+                                    </div>
+                                </div>
+                            </div>
 
-                <div class="action-buttons">
-                    <button id="reset-btn" class="btn btn-secondary">Analyze Another Email</button>
-                    <button id="export-btn" class="btn btn-secondary">📥 Export Report</button>
+                            <!-- URLS SECTION -->
+                            <div id="urls-section" class="urls-card hidden">
+                                <h4 class="card-title">🔗 Detected URLs</h4>
+                                <div id="urls-list" class="urls-list"></div>
+                            </div>
+
+                            <!-- ATTACHMENTS SECTION -->
+                            <div id="attachments-section" class="attachments-card hidden">
+                                <h4 class="card-title">📎 Attachments</h4>
+                                <ul id="attachments-list" class="attachments-list"></ul>
+                            </div>
+
+                            <!-- ACTION BUTTONS -->
+                            <div class="results-actions">
+                                <button id="export-btn" class="btn btn-secondary">📥 Export Report</button>
+                                <button id="analyze-again-btn" class="btn btn-primary">🔄 Analyze Another</button>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
-
-        <footer class="footer">
-            <p>🔒 All analysis is done locally. No data is stored or sent anywhere.</p>
-            <p>Phishing Shield © 2024 | Advanced Email Security Detection</p>
-        </footer>
     </div>
 
     <script src="/static/script.js"></script>

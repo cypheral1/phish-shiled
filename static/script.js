@@ -1,300 +1,384 @@
-// Tab switching
-document.querySelectorAll('.tab-btn').forEach(btn => {
-    btn.addEventListener('click', (e) => {
-        const tabName = e.target.dataset.tab;
-        
-        // Remove active class from all buttons and content
-        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-        document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
-        
-        // Add active class to clicked button and corresponding content
-        e.target.classList.add('active');
-        document.getElementById(tabName).classList.add('active');
-    });
-});
+/**
+ * PhishShield - Professional Email Analysis System
+ */
 
-// Analyze button
-document.getElementById('analyze-btn').addEventListener('click', () => {
-    const emailText = document.getElementById('email-text').value.trim();
-    if (!emailText) {
-        alert('Please paste an email');
-        return;
-    }
-    analyzeEmail(emailText);
-});
-
-// File upload
-const uploadArea = document.getElementById('upload-area');
-const fileInput = document.getElementById('file-input');
-const fileName = document.getElementById('file-name');
-
-uploadArea.addEventListener('click', () => fileInput.click());
-
-uploadArea.addEventListener('dragover', (e) => {
-    e.preventDefault();
-    uploadArea.classList.add('dragover');
-});
-
-uploadArea.addEventListener('dragleave', () => {
-    uploadArea.classList.remove('dragover');
-});
-
-uploadArea.addEventListener('drop', (e) => {
-    e.preventDefault();
-    uploadArea.classList.remove('dragover');
-    const file = e.dataTransfer.files[0];
-    if (file) {
-        fileInput.files = e.dataTransfer.files;
-        fileName.textContent = `Selected: ${file.name}`;
-        fileName.classList.add('show');
-    }
-});
-
-fileInput.addEventListener('change', (e) => {
-    if (e.target.files[0]) {
-        fileName.textContent = `Selected: ${e.target.files[0].name}`;
-        fileName.classList.add('show');
-    }
-});
-
-document.getElementById('upload-btn').addEventListener('click', async () => {
-    const file = fileInput.files[0];
-    if (!file) {
-        alert('Please select a file');
-        return;
+class PhishAnalyzer {
+    constructor() {
+        this.setupElements();
+        this.setupEventListeners();
+        this.initializeUI();
     }
 
-    const formData = new FormData();
-    formData.append('file', file);
+    setupElements() {
+        // Tab toggles
+        this.tabToggles = document.querySelectorAll('.tab-toggle');
+        this.textModeBtn = document.querySelector('[data-tab="text-mode"]');
+        this.fileModeBtn = document.querySelector('[data-tab="file-mode"]');
+        this.sampleModeBtn = document.querySelector('[data-tab="sample-mode"]');
 
-    showLoading();
-    try {
-        const response = await fetch('/api/analyze-file', {
-            method: 'POST',
-            body: formData
+        // Input elements
+        this.emailTextarea = document.getElementById('email-text');
+        this.fileInput = document.getElementById('file-input');
+        this.uploadArea = document.getElementById('upload-area');
+        this.fileName = document.getElementById('file-name');
+
+        // Buttons
+        this.analyzeBtn = document.getElementById('analyze-btn');
+        this.uploadBtn = document.getElementById('upload-btn');
+        this.loadSampleBtn = document.getElementById('load-sample-btn');
+        this.exportBtn = document.getElementById('export-btn');
+        this.analyzeAgainBtn = document.getElementById('analyze-again-btn');
+
+        // Output states
+        this.emptyState = document.getElementById('empty-state');
+        this.loadingState = document.getElementById('loading');
+        this.resultsState = document.getElementById('results');
+
+        this.currentFile = null;
+        this.lastAnalysis = null;
+    }
+
+    setupEventListeners() {
+        // Tab switching
+        this.tabToggles.forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                const tabName = e.target.dataset.tab;
+                this.switchMode(tabName);
+            });
         });
-        const data = await response.json();
-        if (data.success) {
-            displayResults(data);
-        } else {
-            alert('Error: ' + data.error);
-        }
-    } catch (error) {
-        alert('Error uploading file: ' + error.message);
-    }
-    hideLoading();
-});
 
-// Load sample
-document.getElementById('load-sample-btn').addEventListener('click', async () => {
-    showLoading();
-    try {
-        const response = await fetch('/api/sample');
-        const data = await response.json();
-        if (data.success) {
-            document.getElementById('email-text').value = data.email_text;
-            displayResults(data.analysis);
-        } else {
-            alert('Error loading sample');
-        }
-    } catch (error) {
-        alert('Error: ' + error.message);
-    }
-    hideLoading();
-});
+        // Analyze buttons
+        if (this.analyzeBtn) this.analyzeBtn.addEventListener('click', () => this.analyzeText());
+        if (this.uploadBtn) this.uploadBtn.addEventListener('click', () => this.analyzeFile());
+        if (this.loadSampleBtn) this.loadSampleBtn.addEventListener('click', () => this.loadSample());
 
-async function analyzeEmail(emailText) {
-    showLoading();
-    try {
-        const response = await fetch('/api/analyze', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({ email_text: emailText })
+        // File upload
+        if (this.fileInput) this.fileInput.addEventListener('change', (e) => this.handleFileSelect(e));
+        if (this.uploadArea) {
+            this.uploadArea.addEventListener('click', () => this.fileInput?.click());
+            this.uploadArea.addEventListener('dragover', (e) => this.handleDragOver(e));
+            this.uploadArea.addEventListener('dragleave', (e) => this.handleDragLeave(e));
+            this.uploadArea.addEventListener('drop', (e) => this.handleDrop(e));
+        }
+
+        // Results actions
+        if (this.exportBtn) this.exportBtn.addEventListener('click', () => this.exportResults());
+        if (this.analyzeAgainBtn) this.analyzeAgainBtn.addEventListener('click', () => this.resetUI());
+
+        // Keyboard shortcut
+        document.addEventListener('keydown', (e) => {
+            if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+                this.analyzeText();
+            }
         });
-        const data = await response.json();
-        if (data.success) {
-            displayResults(data);
-        } else {
-            alert('Error: ' + data.error);
+    }
+
+    initializeUI() {
+        this.showEmptyState();
+    }
+
+    switchMode(mode) {
+        // Hide all modes
+        document.querySelectorAll('.input-mode').forEach(m => m.classList.remove('active'));
+        document.querySelectorAll('.tab-toggle').forEach(b => b.classList.remove('active'));
+
+        // Show selected mode
+        const modeEl = document.getElementById(mode);
+        if (modeEl) modeEl.classList.add('active');
+        
+        const tabBtn = document.querySelector(`[data-tab="${mode}"]`);
+        if (tabBtn) tabBtn.classList.add('active');
+    }
+
+    handleFileSelect(e) {
+        const file = e.target.files?.[0];
+        if (!file) return;
+
+        if (!this.validateFile(file)) {
+            alert('Invalid file type. Please upload .txt, .eml, or .msg files.');
+            return;
         }
-    } catch (error) {
-        alert('Error analyzing email: ' + error.message);
-    }
-    hideLoading();
-}
 
-function showLoading() {
-    document.getElementById('loading').classList.remove('hidden');
-    document.getElementById('results').classList.add('hidden');
-}
-
-function hideLoading() {
-    document.getElementById('loading').classList.add('hidden');
-}
-
-function displayResults(data) {
-    const results = document.getElementById('results');
-    const score = data.score;
-    const risk_level = data.risk_level;
-    const reasons = data.reasons;
-    const details = data.details;
-
-    // Set risk level
-    const riskCircle = document.getElementById('risk-circle');
-    const riskLevel = document.getElementById('risk-level');
-    const riskValue = document.getElementById('risk-value');
-    
-    riskValue.textContent = score;
-    riskLevel.textContent = risk_level;
-    riskCircle.classList.remove('critical', 'high', 'medium', 'low');
-    
-    if (risk_level === 'CRITICAL') {
-        riskCircle.classList.add('critical');
-        riskLevel.parentElement.classList.remove('critical', 'high', 'medium', 'low');
-        riskLevel.parentElement.classList.add('critical');
-        document.getElementById('risk-description').textContent = 'This email shows strong signs of being a phishing attempt. Do NOT click any links or download attachments.';
-    } else if (risk_level === 'HIGH') {
-        riskCircle.classList.add('high');
-        riskLevel.parentElement.classList.remove('critical', 'high', 'medium', 'low');
-        riskLevel.parentElement.classList.add('high');
-        document.getElementById('risk-description').textContent = 'This email has significant phishing indicators. Exercise caution.';
-    } else if (risk_level === 'MEDIUM') {
-        riskCircle.classList.add('medium');
-        riskLevel.parentElement.classList.remove('critical', 'high', 'medium', 'low');
-        riskLevel.parentElement.classList.add('medium');
-        document.getElementById('risk-description').textContent = 'This email has some suspicious elements. Be careful.';
-    } else {
-        riskCircle.classList.add('low');
-        riskLevel.parentElement.classList.remove('critical', 'high', 'medium', 'low');
-        riskLevel.parentElement.classList.add('low');
-        document.getElementById('risk-description').textContent = 'This email appears to be legitimate.';
+        this.currentFile = file;
+        if (this.fileName) {
+            this.fileName.textContent = `✓ ${file.name} (${(file.size / 1024).toFixed(2)} KB)`;
+            this.fileName.style.display = 'block';
+        }
     }
 
-    // Headers
-    const headersInfo = document.getElementById('headers-info');
-    headersInfo.innerHTML = `
-        <div class="info-line"><span class="info-label">From:</span> ${escapeHtml(details.headers.from)}</div>
-        <div class="info-line"><span class="info-label">Subject:</span> ${escapeHtml(details.headers.subject)}</div>
-        <div class="info-line"><span class="info-label">To:</span> ${escapeHtml(details.headers.to)}</div>
-    `;
-
-    // Reasons
-    const reasonsList = document.getElementById('reasons-list');
-    reasonsList.innerHTML = reasons.map(r => `<li>${escapeHtml(r)}</li>`).join('');
-
-    // URLs
-    const urlsBox = document.getElementById('urls-box');
-    if (details.urls && details.urls.length > 0) {
-        urlsBox.style.display = 'block';
-        const urlsList = document.getElementById('urls-list');
-        urlsList.innerHTML = details.urls.map(u => `
-            <div class="url-item">
-                <div class="url-text">🔗 ${escapeHtml(u.url)}</div>
-                <div class="url-risk">Risk Score: ${u.score}/100</div>
-                ${u.reasons.length > 0 ? `<div class="url-reasons">${u.reasons.map(r => `<div class="url-reason-item">• ${escapeHtml(r)}</div>`).join('')}</div>` : ''}
-            </div>
-        `).join('');
-    } else {
-        urlsBox.style.display = 'none';
+    validateFile(file) {
+        const validTypes = ['.txt', '.eml', '.msg'];
+        const fileName = file.name.toLowerCase();
+        return validTypes.some(type => fileName.endsWith(type));
     }
 
-    // Attachments
-    const attachmentsBox = document.getElementById('attachments-box');
-    if (details.attachments && details.attachments.length > 0) {
-        attachmentsBox.style.display = 'block';
-        const attachmentsList = document.getElementById('attachments-list');
-        attachmentsList.innerHTML = details.attachments.map(a => `<li>${escapeHtml(a)}</li>`).join('');
-    } else {
-        attachmentsBox.style.display = 'none';
+    handleDragOver(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        if (this.uploadArea) this.uploadArea.classList.add('dragover');
     }
 
-    // Analysis stats
-    const stats = details.content_analysis;
-    document.getElementById('analysis-stats').innerHTML = `
-        <div class="stat-item">
-            <div class="stat-value">${stats.urgency_keywords}</div>
-            <div class="stat-label">Urgency Keywords</div>
-        </div>
-        <div class="stat-item">
-            <div class="stat-value">${stats.link_count}</div>
-            <div class="stat-label">Links Found</div>
-        </div>
-        <div class="stat-item">
-            <div class="stat-value">${stats.attachment_count}</div>
-            <div class="stat-label">Attachments</div>
-        </div>
-        <div class="stat-item">
-            <div class="stat-value">${stats.risky_attachments}</div>
-            <div class="stat-label">Risky Attachments</div>
-        </div>
-    `;
+    handleDragLeave(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        if (this.uploadArea) this.uploadArea.classList.remove('dragover');
+    }
 
-    // Show results
-    hideLoading();
-    results.classList.remove('hidden');
+    handleDrop(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        if (this.uploadArea) this.uploadArea.classList.remove('dragover');
+
+        const files = e.dataTransfer?.files;
+        if (files?.length > 0 && this.fileInput) {
+            this.fileInput.files = files;
+            this.handleFileSelect({ target: { files } });
+        }
+    }
+
+    async analyzeText() {
+        if (!this.emailTextarea) {
+            alert('Email textarea not found');
+            return;
+        }
+
+        const email = this.emailTextarea.value.trim();
+        if (!email) {
+            alert('Please paste an email to analyze');
+            return;
+        }
+        await this.sendAnalysis(email);
+    }
+
+    async analyzeFile() {
+        if (!this.currentFile) {
+            alert('Please select a file first');
+            return;
+        }
+
+        const reader = new FileReader();
+        reader.onload = async (e) => {
+            const content = e.target?.result;
+            await this.sendAnalysis(content);
+        };
+        reader.readAsText(this.currentFile);
+    }
+
+    async loadSample() {
+        try {
+            const response = await fetch('/sample_email.txt');
+            const sample = await response.text();
+            if (this.emailTextarea) {
+                this.emailTextarea.value = sample;
+                this.switchMode('text-mode');
+                await this.analyzeText();
+            }
+        } catch (err) {
+            alert('Failed to load sample email');
+        }
+    }
+
+    async sendAnalysis(emailContent) {
+        this.showLoading();
+
+        try {
+            const response = await fetch('/api/analyze', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ email: emailContent })
+            });
+
+            if (!response.ok) throw new Error('Analysis failed');
+            const result = await response.json();
+            this.displayResults(result);
+        } catch (err) {
+            this.showEmptyState();
+            alert('Analysis failed: ' + err.message);
+            console.error(err);
+        }
+    }
+
+    displayResults(analysis) {
+        this.lastAnalysis = analysis;
+        this.showResults();
+
+        try {
+            // Update threat score
+            const score = analysis.score || 0;
+            const scoreText = document.getElementById('score-text');
+            const threatLevel = document.getElementById('threat-level');
+            const threatMessage = document.getElementById('threat-message');
+
+            // Animate score
+            if (scoreText) {
+                this.animateGauge(score);
+                scoreText.textContent = Math.round(score);
+            }
+
+            // Set threat level
+            if (threatLevel && threatMessage) {
+                const level = this.getThreatLevel(score);
+                threatLevel.textContent = level.text;
+                threatLevel.style.color = level.color;
+                threatMessage.textContent = level.message;
+            }
+
+            // Update metadata
+            const headers = analysis.details?.headers || {};
+            const metaFrom = document.getElementById('meta-from');
+            const metaTo = document.getElementById('meta-to');
+            const metaSubject = document.getElementById('meta-subject');
+
+            if (metaFrom) metaFrom.textContent = headers.from || '—';
+            if (metaTo) metaTo.textContent = headers.to || '—';
+            if (metaSubject) metaSubject.textContent = headers.subject || '—';
+
+            // Update threat indicators
+            const reasons = analysis.reasons || [];
+            const indicatorsList = document.getElementById('indicators-list');
+            if (indicatorsList) {
+                indicatorsList.innerHTML = '';
+                
+                if (reasons.length === 0) {
+                    const li = document.createElement('li');
+                    li.textContent = '✓ No threats detected';
+                    li.className = 'safe';
+                    indicatorsList.appendChild(li);
+                } else {
+                    reasons.forEach((reason) => {
+                        const li = document.createElement('li');
+                        li.textContent = reason;
+                        indicatorsList.appendChild(li);
+                    });
+                }
+            }
+
+            // Update URLs if present
+            const urls = analysis.details?.urls || [];
+            const urlsSection = document.getElementById('urls-section');
+            if (urls.length > 0 && urlsSection) {
+                urlsSection.classList.remove('hidden');
+                const urlsList = document.getElementById('urls-list');
+                if (urlsList) {
+                    urlsList.innerHTML = '';
+                    urls.forEach(url => {
+                        const li = document.createElement('li');
+                        li.textContent = url;
+                        li.title = url;
+                        urlsList.appendChild(li);
+                    });
+                }
+            } else if (urlsSection) {
+                urlsSection.classList.add('hidden');
+            }
+
+            // Update attachments if present
+            const attachments = analysis.details?.attachments || [];
+            const attachmentsSection = document.getElementById('attachments-section');
+            if (attachments.length > 0 && attachmentsSection) {
+                attachmentsSection.classList.remove('hidden');
+                const attachmentsList = document.getElementById('attachments-list');
+                if (attachmentsList) {
+                    attachmentsList.innerHTML = '';
+                    attachments.forEach(att => {
+                        const li = document.createElement('li');
+                        li.textContent = att;
+                        attachmentsList.appendChild(li);
+                    });
+                }
+            } else if (attachmentsSection) {
+                attachmentsSection.classList.add('hidden');
+            }
+        } catch (err) {
+            console.error('Error displaying results:', err);
+            alert('Error displaying results: ' + err.message);
+        }
+    }
+
+    animateGauge(score) {
+        const gaugeFill = document.getElementById('gauge-circle');
+        if (!gaugeFill) return;
+
+        const radius = 90;
+        const circumference = 2 * Math.PI * radius;
+        
+        // Calculate offset based on score (0-100)
+        const offset = circumference - (score / 100) * circumference;
+        
+        gaugeFill.style.strokeDashoffset = circumference;
+        setTimeout(() => {
+            gaugeFill.style.strokeDashoffset = offset;
+        }, 100);
+
+        // Change color based on score
+        const color = score < 30 ? '#2da645' : score < 70 ? '#ffaa00' : '#ff4444';
+        gaugeFill.style.stroke = color;
+    }
+
+    getThreatLevel(score) {
+        if (score < 20) return { text: '🟢 LOW RISK', color: '#2da645', message: 'Email appears safe' };
+        if (score < 40) return { text: '🟡 LOW-MEDIUM', color: '#a6a600', message: 'Minor suspicious indicators' };
+        if (score < 60) return { text: '🟠 MEDIUM', color: '#ffaa00', message: 'Several warning signs detected' };
+        if (score < 80) return { text: '🔴 HIGH', color: '#ff6644', message: 'Significant threat indicators' };
+        return { text: '🔴 CRITICAL', color: '#ff4444', message: 'Likely malicious email' };
+    }
+
+    showEmptyState() {
+        if (this.emptyState) this.emptyState.classList.remove('hidden');
+        if (this.loadingState) this.loadingState.classList.add('hidden');
+        if (this.resultsState) this.resultsState.classList.add('hidden');
+    }
+
+    showLoading() {
+        if (this.emptyState) this.emptyState.classList.add('hidden');
+        if (this.loadingState) this.loadingState.classList.remove('hidden');
+        if (this.resultsState) this.resultsState.classList.add('hidden');
+    }
+
+    showResults() {
+        if (this.emptyState) this.emptyState.classList.add('hidden');
+        if (this.loadingState) this.loadingState.classList.add('hidden');
+        if (this.resultsState) this.resultsState.classList.remove('hidden');
+    }
+
+    resetUI() {
+        if (this.emailTextarea) this.emailTextarea.value = '';
+        if (this.fileInput) this.fileInput.value = '';
+        this.currentFile = null;
+        if (this.fileName) {
+            this.fileName.textContent = '';
+            this.fileName.style.display = 'none';
+        }
+        this.showEmptyState();
+        this.switchMode('text-mode');
+    }
+
+    exportResults() {
+        if (!this.lastAnalysis) {
+            alert('No analysis to export');
+            return;
+        }
+
+        const exportData = {
+            timestamp: new Date().toISOString(),
+            analysis: this.lastAnalysis
+        };
+
+        const dataStr = JSON.stringify(exportData, null, 2);
+        const dataBlob = new Blob([dataStr], { type: 'application/json' });
+        const url = URL.createObjectURL(dataBlob);
+        
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `phishing-analysis-${Date.now()}.json`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+    }
 }
 
-// Close results
-document.getElementById('close-results').addEventListener('click', () => {
-    document.getElementById('results').classList.add('hidden');
-});
-
-// Reset
-document.getElementById('reset-btn').addEventListener('click', () => {
-    document.getElementById('email-text').value = '';
-    document.getElementById('file-input').value = '';
-    document.getElementById('file-name').classList.remove('show');
-    document.getElementById('results').classList.add('hidden');
-    document.getElementById('text-input').classList.add('active');
-    document.getElementById('email-text').focus();
-});
-
-// Export
-document.getElementById('export-btn').addEventListener('click', () => {
-    const score = document.getElementById('risk-value').textContent;
-    const riskLevel = document.getElementById('risk-level').textContent;
-    const reasons = Array.from(document.querySelectorAll('.reasons-list li')).map(li => li.textContent.trim());
-    
-    const report = `
-Phishing Email Analysis Report
-===============================
-Generated: ${new Date().toLocaleString()}
-
-RISK ASSESSMENT:
-- Risk Level: ${riskLevel}
-- Risk Score: ${score}/100
-
-RISK INDICATORS:
-${reasons.map(r => `- ${r}`).join('\n')}
-
-This report was generated by Phishing Shield
-No data is stored or sent to external servers.
-All analysis is done locally on your device.
-    `;
-
-    const element = document.createElement('a');
-    element.setAttribute('href', 'data:text/plain;charset=utf-8,' + encodeURIComponent(report));
-    element.setAttribute('download', 'phishing-report.txt');
-    element.style.display = 'none';
-    document.body.appendChild(element);
-    element.click();
-    document.body.removeChild(element);
-});
-
-function escapeHtml(text) {
-    const map = {
-        '&': '&amp;',
-        '<': '&lt;',
-        '>': '&gt;',
-        '"': '&quot;',
-        "'": '&#039;'
-    };
-    return text.replace(/[&<>"']/g, m => map[m]);
-}
-
-// Focus on email input on load
-window.addEventListener('load', () => {
-    document.getElementById('email-text').focus();
+// Initialize when DOM is ready
+document.addEventListener('DOMContentLoaded', () => {
+    new PhishAnalyzer();
 });

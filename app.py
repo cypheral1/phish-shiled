@@ -195,7 +195,7 @@ def index():
 def analyze():
     try:
         data = request.json
-        email_text = data.get('email_text', '')
+        email_text = data.get('email', '')
         if not email_text.strip():
             return jsonify({'error': 'Please provide email content', 'success': False}), 400
         score, reasons, details = detect_phishing(email_text)

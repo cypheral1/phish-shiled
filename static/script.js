@@ -1,300 +1,635 @@
-// Tab switching
-document.querySelectorAll('.tab-btn').forEach(btn => {
-    btn.addEventListener('click', (e) => {
-        const tabName = e.target.dataset.tab;
+// ===== PARTICLE SYSTEM =====
+class ParticleSystem {
+    constructor(container) {
+        this.container = container;
+        this.particles = [];
+        this.init();
+    }
+
+    init() {
+        for (let i = 0; i < 40; i++) {
+            this.createParticle();
+        }
+    }
+
+    createParticle() {
+        const particle = document.createElement('div');
+        particle.className = 'particle';
         
-        // Remove active class from all buttons and content
-        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-        document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+        const size = Math.random() * 3 + 1;
+        const x = Math.random() * 100;
+        const y = Math.random() * 100;
+        const duration = Math.random() * 10 + 10;
+        const delay = Math.random() * 5;
         
-        // Add active class to clicked button and corresponding content
-        e.target.classList.add('active');
+        particle.style.width = size + 'px';
+        particle.style.height = size + 'px';
+        particle.style.left = x + '%';
+        particle.style.top = y + '%';
+        particle.style.animation = `float ${duration}s ease-in-out infinite`;
+        particle.style.animationDelay = delay + 's';
+        
+        this.container.appendChild(particle);
+        this.particles.push(particle);
+    }
+}
+
+// ===== INITIALIZATION =====
+document.addEventListener('DOMContentLoaded', () => {
+    // Initialize particle system
+    const particlesContainer = document.getElementById('particlesContainer');
+    if (particlesContainer) {
+        new ParticleSystem(particlesContainer);
+    }
+
+    // Initialize SVG gradient
+    initProgressGradient();
+
+    console.log('✅ Detector page initialized');
+});
+
+function initProgressGradient() {
+    const svg = document.querySelector('.score-circle');
+    if (!svg) return;
+
+    const defs = document.createElementNS('http://www.w3.org/2000/svg', 'defs');
+    const gradient = document.createElementNS('http://www.w3.org/2000/svg', 'linearGradient');
+    gradient.setAttribute('id', 'progressGradient');
+    gradient.setAttribute('x1', '0%');
+    gradient.setAttribute('y1', '0%');
+    gradient.setAttribute('x2', '100%');
+    gradient.setAttribute('y2', '100%');
+
+    const stop1 = document.createElementNS('http://www.w3.org/2000/svg', 'stop');
+    stop1.setAttribute('offset', '0%');
+    stop1.setAttribute('stop-color', '#7c3aed');
+
+    const stop2 = document.createElementNS('http://www.w3.org/2000/svg', 'stop');
+    stop2.setAttribute('offset', '100%');
+    stop2.setAttribute('stop-color', '#06b6d4');
+
+    gradient.appendChild(stop1);
+    gradient.appendChild(stop2);
+    defs.appendChild(gradient);
+    svg.appendChild(defs);
+}
+
+// ===== STATE MANAGEMENT =====
+let analysisHistory = [];
+
+// ===== DOM ELEMENTS =====
+const emailInput = document.getElementById('emailInput');
+const fileInput = document.getElementById('fileInput');
+const analyzeBtn = document.getElementById('analyzeBtn');
+const uploadBtn = document.getElementById('uploadBtn');
+const resultsContainer = document.getElementById('resultsContainer');
+const resultsDisplay = document.getElementById('resultsDisplay');
+const loadingState = document.getElementById('loadingState');
+const errorState = document.getElementById('errorState');
+const emptyState = document.getElementById('emptyState');
+const tabs = document.querySelectorAll('.tab-btn');
+const tabContents = document.querySelectorAll('.tab-content');
+const charCount = document.getElementById('charCount');
+const clearBtn = document.getElementById('clearBtn');
+const clearHistoryBtn = document.getElementById('clearHistoryBtn');
+const exportResultBtn = document.getElementById('exportResultBtn');
+const analyzeAnotherBtn = document.getElementById('analyzeAnotherBtn');
+const errorDismissBtn = document.getElementById('errorDismissBtn');
+
+// ===== CHARACTER COUNT =====
+if (emailInput) {
+    emailInput.addEventListener('input', () => {
+        charCount.textContent = emailInput.value.length;
+    });
+}
+
+// ===== CLEAR BUTTON =====
+if (clearBtn) {
+    clearBtn.addEventListener('click', () => {
+        emailInput.value = '';
+        charCount.textContent = '0';
+    });
+}
+
+// ===== TAB SWITCHING =====
+tabs.forEach(tab => {
+    tab.addEventListener('click', () => {
+        const tabName = tab.getAttribute('data-tab');
+        
+        // Remove active class from all tabs and contents
+        tabs.forEach(t => t.classList.remove('active'));
+        tabContents.forEach(content => content.classList.remove('active'));
+        
+        // Add active class to clicked tab and corresponding content
+        tab.classList.add('active');
         document.getElementById(tabName).classList.add('active');
+        
+        // Load history if history tab is clicked
+        if (tabName === 'history') {
+            displayHistory();
+        }
     });
 });
 
-// Analyze button
-document.getElementById('analyze-btn').addEventListener('click', () => {
-    const emailText = document.getElementById('email-text').value.trim();
-    if (!emailText) {
-        alert('Please paste an email');
+// ===== ANALYZE EMAIL (TEXT INPUT) =====
+analyzeBtn.addEventListener('click', async () => {
+    const email = emailInput.value.trim();
+    
+    if (!email) {
+        showNotification('Please paste an email to analyze', 'warning');
         return;
     }
-    analyzeEmail(emailText);
+    
+    await sendAnalysisRequest({ email });
 });
 
-// File upload
-const uploadArea = document.getElementById('upload-area');
-const fileInput = document.getElementById('file-input');
-const fileName = document.getElementById('file-name');
-
-uploadArea.addEventListener('click', () => fileInput.click());
-
-uploadArea.addEventListener('dragover', (e) => {
-    e.preventDefault();
-    uploadArea.classList.add('dragover');
-});
-
-uploadArea.addEventListener('dragleave', () => {
-    uploadArea.classList.remove('dragover');
-});
-
-uploadArea.addEventListener('drop', (e) => {
-    e.preventDefault();
-    uploadArea.classList.remove('dragover');
-    const file = e.dataTransfer.files[0];
-    if (file) {
-        fileInput.files = e.dataTransfer.files;
-        fileName.textContent = `Selected: ${file.name}`;
-        fileName.classList.add('show');
+// ===== UPLOAD FILE =====
+uploadBtn.addEventListener('click', async () => {
+    if (!fileInput.files.length) {
+        showNotification('Please select a file to upload', 'warning');
+        return;
     }
-});
-
-fileInput.addEventListener('change', (e) => {
-    if (e.target.files[0]) {
-        fileName.textContent = `Selected: ${e.target.files[0].name}`;
-        fileName.classList.add('show');
-    }
-});
-
-document.getElementById('upload-btn').addEventListener('click', async () => {
+    
     const file = fileInput.files[0];
-    if (!file) {
-        alert('Please select a file');
+    
+    // Validate file type
+    const allowedExtensions = ['txt', 'eml', 'msg'];
+    const fileExtension = file.name.split('.').pop().toLowerCase();
+    
+    if (!allowedExtensions.includes(fileExtension)) {
+        showNotification(`Invalid file type. Allowed: ${allowedExtensions.join(', ')}`, 'warning');
         return;
     }
+    
+    // Validate file size (max 100MB)
+    const maxSize = 100 * 1024 * 1024;
+    if (file.size > maxSize) {
+        showNotification('File is too large. Maximum size: 100MB', 'warning');
+        return;
+    }
+    
+    // Show file info
+    const fileSize = (file.size / 1024).toFixed(2);
+    console.log(`📁 Uploading: ${file.name} (${fileSize} KB)`);
+    
+    await analyzeFile(file);
+});
 
+// ===== ANALYZE FILE =====
+async function analyzeFile(file) {
     const formData = new FormData();
     formData.append('file', file);
-
-    showLoading();
+    
+    loadingIndicator.classList.remove('hidden');
+    
     try {
+        console.log('🔍 Analyzing file...');
+        
         const response = await fetch('/api/analyze-file', {
             method: 'POST',
             body: formData
         });
-        const data = await response.json();
-        if (data.success) {
-            displayResults(data);
-        } else {
-            alert('Error: ' + data.error);
+        
+        if (!response.ok) {
+            const error = await response.json();
+            throw new Error(error.error || 'Analysis failed');
         }
+        
+        const result = await response.json();
+        console.log('✅ Analysis complete:', result);
+        
+        displayResults(result);
+        showNotification(`File analyzed successfully: ${file.name}`, 'info');
+        
+        // Clear file input after successful analysis
+        fileInput.value = '';
+        updateFileInputLabel();
     } catch (error) {
-        alert('Error uploading file: ' + error.message);
+        console.error('❌ Analysis error:', error);
+        showNotification(`Error: ${error.message}`, 'danger');
+    } finally {
+        loadingIndicator.classList.add('hidden');
     }
-    hideLoading();
+}
+
+// ===== FILE INPUT DRAG & DROP =====
+const fileLabel = document.querySelector('.file-label');
+const uploadArea = document.querySelector('.upload-area');
+
+// Drag over label
+if (fileLabel) {
+    fileLabel.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        fileLabel.classList.add('drag-over');
+    });
+    
+    fileLabel.addEventListener('dragleave', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        fileLabel.classList.remove('drag-over');
+    });
+    
+    fileLabel.addEventListener('drop', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        fileLabel.classList.remove('drag-over');
+        
+        const files = e.dataTransfer.files;
+        if (files.length > 0) {
+            handleFileSelection(files[0]);
+        }
+    });
+}
+
+// Drag over upload area
+if (uploadArea) {
+    uploadArea.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        uploadArea.classList.add('drag-over');
+    });
+    
+    uploadArea.addEventListener('dragleave', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        uploadArea.classList.remove('drag-over');
+    });
+    
+    uploadArea.addEventListener('drop', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        uploadArea.classList.remove('drag-over');
+        
+        const files = e.dataTransfer.files;
+        if (files.length > 0) {
+            handleFileSelection(files[0]);
+        }
+    });
+}
+
+// File input change handler
+fileInput.addEventListener('change', (e) => {
+    if (e.target.files.length > 0) {
+        handleFileSelection(e.target.files[0]);
+    }
 });
 
-// Load sample
-document.getElementById('load-sample-btn').addEventListener('click', async () => {
-    showLoading();
-    try {
-        const response = await fetch('/api/sample');
-        const data = await response.json();
-        if (data.success) {
-            document.getElementById('email-text').value = data.email_text;
-            displayResults(data.analysis);
-        } else {
-            alert('Error loading sample');
-        }
-    } catch (error) {
-        alert('Error: ' + error.message);
+// ===== HANDLE FILE SELECTION =====
+function handleFileSelection(file) {
+    // Validate file type
+    const allowedExtensions = ['txt', 'eml', 'msg'];
+    const fileExtension = file.name.split('.').pop().toLowerCase();
+    
+    if (!allowedExtensions.includes(fileExtension)) {
+        showNotification(`❌ Invalid file type. Allowed: ${allowedExtensions.join(', ')}`, 'danger');
+        fileInput.value = '';
+        return;
     }
-    hideLoading();
-});
+    
+    // Validate file size (max 100MB)
+    const maxSize = 100 * 1024 * 1024;
+    if (file.size > maxSize) {
+        showNotification('❌ File is too large. Maximum size: 100MB', 'danger');
+        fileInput.value = '';
+        return;
+    }
+    
+    // Set file input and update label
+    const dataTransfer = new DataTransfer();
+    dataTransfer.items.add(file);
+    fileInput.files = dataTransfer.files;
+    
+    updateFileInputLabel();
+    showFileInfo(file);
+    showNotification(`✅ File selected: ${file.name}`, 'success');
+}
 
-async function analyzeEmail(emailText) {
-    showLoading();
+// ===== UPDATE FILE INPUT LABEL =====
+function updateFileInputLabel() {
+    if (fileInput.files.length > 0) {
+        const file = fileInput.files[0];
+        const fileSize = (file.size / 1024).toFixed(2);
+        fileLabel.textContent = `📄 ${file.name} (${fileSize} KB)`;
+        fileLabel.style.color = 'var(--secondary)';
+    } else {
+        fileLabel.textContent = '📁 Choose Email File';
+        fileLabel.style.color = 'var(--primary)';
+    }
+}
+
+// ===== FILE INPUT CHANGE EVENT =====
+if (fileInput) {
+    fileInput.addEventListener('change', () => {
+        updateFileInputLabel();
+        if (fileInput.files.length > 0) {
+            showNotification(`File selected: ${fileInput.files[0].name}`, 'info');
+        }
+    });
+}
+
+// ===== SEND ANALYSIS REQUEST =====
+async function sendAnalysisRequest(data) {
+    loadingIndicator.classList.remove('hidden');
+    
     try {
         const response = await fetch('/api/analyze', {
             method: 'POST',
             headers: {
-                'Content-Type': 'application/json',
+                'Content-Type': 'application/json'
             },
-            body: JSON.stringify({ email_text: emailText })
+            body: JSON.stringify(data)
         });
-        const data = await response.json();
-        if (data.success) {
-            displayResults(data);
-        } else {
-            alert('Error: ' + data.error);
+        
+        if (!response.ok) {
+            const error = await response.json();
+            throw new Error(error.error || 'Analysis failed');
         }
+        
+        const result = await response.json();
+        analysisHistory.unshift(result);
+        displayResults(result);
     } catch (error) {
-        alert('Error analyzing email: ' + error.message);
+        showNotification(`Error: ${error.message}`, 'danger');
+    } finally {
+        loadingIndicator.classList.add('hidden');
     }
-    hideLoading();
 }
 
-function showLoading() {
-    document.getElementById('loading').classList.remove('hidden');
-    document.getElementById('results').classList.add('hidden');
-}
-
-function hideLoading() {
-    document.getElementById('loading').classList.add('hidden');
-}
-
-function displayResults(data) {
-    const results = document.getElementById('results');
-    const score = data.score;
-    const risk_level = data.risk_level;
-    const reasons = data.reasons;
-    const details = data.details;
-
-    // Set risk level
-    const riskCircle = document.getElementById('risk-circle');
-    const riskLevel = document.getElementById('risk-level');
-    const riskValue = document.getElementById('risk-value');
+// ===== DISPLAY RESULTS =====
+function displayResults(result) {
+    // Update score circle
+    const scoreCircle = document.getElementById('scoreCircle');
+    const scoreNumber = document.getElementById('scoreNumber');
+    const riskLevel = document.getElementById('riskLevel');
+    const riskDescription = document.getElementById('riskDescription');
     
-    riskValue.textContent = score;
-    riskLevel.textContent = risk_level;
-    riskCircle.classList.remove('critical', 'high', 'medium', 'low');
+    scoreNumber.textContent = result.score;
+    riskLevel.textContent = result.risk_level;
     
-    if (risk_level === 'CRITICAL') {
-        riskCircle.classList.add('critical');
-        riskLevel.parentElement.classList.remove('critical', 'high', 'medium', 'low');
-        riskLevel.parentElement.classList.add('critical');
-        document.getElementById('risk-description').textContent = 'This email shows strong signs of being a phishing attempt. Do NOT click any links or download attachments.';
-    } else if (risk_level === 'HIGH') {
-        riskCircle.classList.add('high');
-        riskLevel.parentElement.classList.remove('critical', 'high', 'medium', 'low');
-        riskLevel.parentElement.classList.add('high');
-        document.getElementById('risk-description').textContent = 'This email has significant phishing indicators. Exercise caution.';
-    } else if (risk_level === 'MEDIUM') {
-        riskCircle.classList.add('medium');
-        riskLevel.parentElement.classList.remove('critical', 'high', 'medium', 'low');
-        riskLevel.parentElement.classList.add('medium');
-        document.getElementById('risk-description').textContent = 'This email has some suspicious elements. Be careful.';
+    // Remove all risk level classes
+    scoreCircle.classList.remove('safe', 'low', 'medium', 'high', 'critical');
+    
+    // Add appropriate risk level class
+    const riskClass = result.risk_level.toLowerCase();
+    scoreCircle.classList.add(riskClass);
+    
+    // Update risk description
+    const descriptions = {
+        'SAFE': '✅ No phishing indicators detected',
+        'LOW': '⚠️ Minor phishing indicators detected',
+        'MEDIUM': '🔴 Moderate phishing indicators present',
+        'HIGH': '🔴 Strong phishing indicators detected',
+        'CRITICAL': '🚨 Critical phishing threat detected'
+    };
+    riskDescription.textContent = descriptions[result.risk_level] || '';
+    
+    // Update email details
+    document.getElementById('fromValue').textContent = result.from || '-';
+    document.getElementById('subjectValue').textContent = result.subject || '-';
+    
+    // Update reasons
+    const reasonsList = document.getElementById('reasonsList');
+    if (result.reasons.length > 0) {
+        reasonsList.innerHTML = result.reasons.map(reason => `<li>${reason}</li>`).join('');
     } else {
-        riskCircle.classList.add('low');
-        riskLevel.parentElement.classList.remove('critical', 'high', 'medium', 'low');
-        riskLevel.parentElement.classList.add('low');
-        document.getElementById('risk-description').textContent = 'This email appears to be legitimate.';
+        reasonsList.innerHTML = '<li>✅ No suspicious indicators found</li>';
     }
-
-    // Headers
-    const headersInfo = document.getElementById('headers-info');
-    headersInfo.innerHTML = `
-        <div class="info-line"><span class="info-label">From:</span> ${escapeHtml(details.headers.from)}</div>
-        <div class="info-line"><span class="info-label">Subject:</span> ${escapeHtml(details.headers.subject)}</div>
-        <div class="info-line"><span class="info-label">To:</span> ${escapeHtml(details.headers.to)}</div>
-    `;
-
-    // Reasons
-    const reasonsList = document.getElementById('reasons-list');
-    reasonsList.innerHTML = reasons.map(r => `<li>${escapeHtml(r)}</li>`).join('');
-
-    // URLs
-    const urlsBox = document.getElementById('urls-box');
-    if (details.urls && details.urls.length > 0) {
-        urlsBox.style.display = 'block';
-        const urlsList = document.getElementById('urls-list');
-        urlsList.innerHTML = details.urls.map(u => `
+    
+    // Update URLs
+    const urlsSection = document.getElementById('urlsSection');
+    const urlsList = document.getElementById('urlsList');
+    
+    if (result.suspicious_urls && result.suspicious_urls.length > 0) {
+        urlsSection.classList.remove('hidden');
+        urlsList.innerHTML = result.suspicious_urls.map(url => `
             <div class="url-item">
-                <div class="url-text">🔗 ${escapeHtml(u.url)}</div>
-                <div class="url-risk">Risk Score: ${u.score}/100</div>
-                ${u.reasons.length > 0 ? `<div class="url-reasons">${u.reasons.map(r => `<div class="url-reason-item">• ${escapeHtml(r)}</div>`).join('')}</div>` : ''}
+                <strong>🔗 ${url.url}</strong><br>
+                <small>Issues: ${url.issues.join(', ')}</small>
             </div>
         `).join('');
     } else {
-        urlsBox.style.display = 'none';
+        urlsSection.classList.add('hidden');
     }
-
-    // Attachments
-    const attachmentsBox = document.getElementById('attachments-box');
-    if (details.attachments && details.attachments.length > 0) {
-        attachmentsBox.style.display = 'block';
-        const attachmentsList = document.getElementById('attachments-list');
-        attachmentsList.innerHTML = details.attachments.map(a => `<li>${escapeHtml(a)}</li>`).join('');
-    } else {
-        attachmentsBox.style.display = 'none';
-    }
-
-    // Analysis stats
-    const stats = details.content_analysis;
-    document.getElementById('analysis-stats').innerHTML = `
-        <div class="stat-item">
-            <div class="stat-value">${stats.urgency_keywords}</div>
-            <div class="stat-label">Urgency Keywords</div>
-        </div>
-        <div class="stat-item">
-            <div class="stat-value">${stats.link_count}</div>
-            <div class="stat-label">Links Found</div>
-        </div>
-        <div class="stat-item">
-            <div class="stat-value">${stats.attachment_count}</div>
-            <div class="stat-label">Attachments</div>
-        </div>
-        <div class="stat-item">
-            <div class="stat-value">${stats.risky_attachments}</div>
-            <div class="stat-label">Risky Attachments</div>
-        </div>
-    `;
-
-    // Show results
-    hideLoading();
-    results.classList.remove('hidden');
-}
-
-// Close results
-document.getElementById('close-results').addEventListener('click', () => {
-    document.getElementById('results').classList.add('hidden');
-});
-
-// Reset
-document.getElementById('reset-btn').addEventListener('click', () => {
-    document.getElementById('email-text').value = '';
-    document.getElementById('file-input').value = '';
-    document.getElementById('file-name').classList.remove('show');
-    document.getElementById('results').classList.add('hidden');
-    document.getElementById('text-input').classList.add('active');
-    document.getElementById('email-text').focus();
-});
-
-// Export
-document.getElementById('export-btn').addEventListener('click', () => {
-    const score = document.getElementById('risk-value').textContent;
-    const riskLevel = document.getElementById('risk-level').textContent;
-    const reasons = Array.from(document.querySelectorAll('.reasons-list li')).map(li => li.textContent.trim());
     
-    const report = `
-Phishing Email Analysis Report
-===============================
-Generated: ${new Date().toLocaleString()}
-
-RISK ASSESSMENT:
-- Risk Level: ${riskLevel}
-- Risk Score: ${score}/100
-
-RISK INDICATORS:
-${reasons.map(r => `- ${r}`).join('\n')}
-
-This report was generated by Phishing Shield
-No data is stored or sent to external servers.
-All analysis is done locally on your device.
-    `;
-
-    const element = document.createElement('a');
-    element.setAttribute('href', 'data:text/plain;charset=utf-8,' + encodeURIComponent(report));
-    element.setAttribute('download', 'phishing-report.txt');
-    element.style.display = 'none';
-    document.body.appendChild(element);
-    element.click();
-    document.body.removeChild(element);
-});
-
-function escapeHtml(text) {
-    const map = {
-        '&': '&amp;',
-        '<': '&lt;',
-        '>': '&gt;',
-        '"': '&quot;',
-        "'": '&#039;'
-    };
-    return text.replace(/[&<>"']/g, m => map[m]);
+    // Update all URLs
+    const allUrlsSection = document.getElementById('allUrlsSection');
+    const allUrlsList = document.getElementById('allUrlsList');
+    
+    if (result.urls && result.urls.length > 0) {
+        allUrlsSection.classList.remove('hidden');
+        allUrlsList.innerHTML = result.urls.map(url => `
+            <div class="url-item-safe">
+                🔗 ${url}
+            </div>
+        `).join('');
+    } else {
+        allUrlsSection.classList.add('hidden');
+    }
+    
+    // Show results section with animation
+    resultsSection.classList.remove('hidden');
+    resultsSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    
+    // Add animation
+    resultsSection.style.animation = 'fadeInUp 0.6s ease';
 }
 
-// Focus on email input on load
-window.addEventListener('load', () => {
-    document.getElementById('email-text').focus();
+// ===== DISPLAY HISTORY =====
+function displayHistory() {
+    const historyList = document.getElementById('historyList');
+    
+    if (analysisHistory.length === 0) {
+        historyList.innerHTML = '<p class="empty-state">No analyses yet. Analyze an email to get started!</p>';
+        return;
+    }
+    
+    historyList.innerHTML = analysisHistory.map((item, index) => {
+        const timestamp = new Date(item.timestamp).toLocaleString();
+        return `
+            <div class="history-item" onclick="restoreHistoryItem(${index})">
+                <div class="history-item-header">
+                    <span class="history-item-from">${item.from || 'Unknown Sender'}</span>
+                    <span class="history-item-score">${item.score}/100</span>
+                </div>
+                <div class="history-item-subject">${item.subject || 'No Subject'}</div>
+                <div class="history-item-time">${timestamp}</div>
+            </div>
+        `;
+    }).join('');
+}
+
+// ===== RESTORE HISTORY ITEM =====
+function restoreHistoryItem(index) {
+    displayResults(analysisHistory[index]);
+}
+
+// ===== CLOSE RESULTS =====
+closeResultsBtn.addEventListener('click', () => {
+    resultsSection.classList.add('hidden');
 });
+
+// ===== NOTIFICATIONS =====
+function showNotification(message, type = 'info') {
+    // Create a simple notification (can be enhanced with a toast library)
+    const notification = document.createElement('div');
+    notification.style.cssText = `
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        background: ${type === 'danger' ? '#ff1744' : type === 'warning' ? '#f59e0b' : '#00ff88'};
+        color: ${type === 'danger' ? 'white' : type === 'warning' ? '#000' : '#000'};
+        padding: 15px 25px;
+        border-radius: 8px;
+        font-weight: bold;
+        z-index: 3000;
+        animation: slideIn 0.3s ease;
+        box-shadow: 0 0 20px rgba(0, 0, 0, 0.3);
+    `;
+    notification.textContent = message;
+    document.body.appendChild(notification);
+    
+    setTimeout(() => {
+        notification.style.animation = 'slideOut 0.3s ease';
+        setTimeout(() => notification.remove(), 300);
+    }, 3000);
+}
+
+// ===== ADD ANIMATIONS TO STYLESHEET =====
+const style = document.createElement('style');
+style.textContent = `
+    @keyframes slideIn {
+        from {
+            transform: translateX(400px);
+            opacity: 0;
+        }
+        to {
+            transform: translateX(0);
+            opacity: 1;
+        }
+    }
+    
+    @keyframes slideOut {
+        from {
+            transform: translateX(0);
+            opacity: 1;
+        }
+        to {
+            transform: translateX(400px);
+            opacity: 0;
+        }
+    }
+`;
+document.head.appendChild(style);
+
+// ===== PARTICLE ANIMATION BACKGROUND =====
+function createParticles() {
+    const container = document.body;
+    const particleCount = 30;
+    
+    for (let i = 0; i < particleCount; i++) {
+        const particle = document.createElement('div');
+        particle.style.cssText = `
+            position: fixed;
+            pointer-events: none;
+            width: ${Math.random() * 3 + 1}px;
+            height: ${Math.random() * 3 + 1}px;
+            background: rgba(0, 255, 136, ${Math.random() * 0.5 + 0.3});
+            border-radius: 50%;
+            left: ${Math.random() * 100}%;
+            top: ${Math.random() * 100}%;
+            animation: float ${Math.random() * 10 + 5}s ease-in-out infinite;
+            z-index: 1;
+        `;
+        container.appendChild(particle);
+    }
+}
+
+// Initialize particles on load
+window.addEventListener('load', () => {
+    createParticles();
+    
+    // Add some interactive effects
+    document.addEventListener('mousemove', (e) => {
+        // Optional: Add parallax or other mouse tracking effects
+    });
+});
+
+// ===== KEYBOARD SHORTCUTS =====
+document.addEventListener('keydown', (e) => {
+    // Ctrl+Enter to analyze
+    if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+        if (document.activeElement === emailInput) {
+            analyzeBtn.click();
+        }
+    }
+});
+
+// ===== LOCALSTORAGE PERSISTENCE =====
+function saveHistory() {
+    localStorage.setItem('phishingHistory', JSON.stringify(analysisHistory.slice(0, 50)));
+}
+
+function loadHistoryFromStorage() {
+    const stored = localStorage.getItem('phishingHistory');
+    if (stored) {
+        try {
+            analysisHistory = JSON.parse(stored);
+        } catch (e) {
+            console.error('Failed to load history:', e);
+        }
+    }
+}
+
+// Save history when analysis is added
+const originalAnalyze = sendAnalysisRequest;
+sendAnalysisRequest = async function(data) {
+    await originalAnalyze(data);
+    saveHistory();
+};
+
+// Load history on startup
+window.addEventListener('load', () => {
+    loadHistoryFromStorage();
+});
+
+// ===== EXPORT ANALYSIS =====
+function exportAnalysisAsJSON(result) {
+    const dataStr = JSON.stringify(result, null, 2);
+    const dataBlob = new Blob([dataStr], { type: 'application/json' });
+    const url = URL.createObjectURL(dataBlob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `phishing-analysis-${new Date().getTime()}.json`;
+    link.click();
+    URL.revokeObjectURL(url);
+}
+
+// ===== ADD EXPORT BUTTON FUNCTIONALITY =====
+window.addEventListener('load', () => {
+    const resultsHeader = document.querySelector('.results-header');
+    if (resultsHeader && !document.getElementById('exportBtn')) {
+        const exportBtn = document.createElement('button');
+        exportBtn.id = 'exportBtn';
+        exportBtn.className = 'btn-close';
+        exportBtn.innerHTML = '📥';
+        exportBtn.style.marginRight = '15px';
+        exportBtn.title = 'Export Analysis';
+        exportBtn.addEventListener('click', () => {
+            const scoreNumber = document.getElementById('scoreNumber').textContent;
+            if (scoreNumber) {
+                exportAnalysisAsJSON({
+                    score: scoreNumber,
+                    riskLevel: document.getElementById('riskLevel').textContent,
+                    from: document.getElementById('fromValue').textContent,
+                    subject: document.getElementById('subjectValue').textContent,
+                    timestamp: new Date().toISOString()
+                });
+                showNotification('Analysis exported successfully!', 'info');
+            }
+        });
+        resultsHeader.insertBefore(exportBtn, closeResultsBtn);
+    }
+});
+
+console.log('🛡️ Phishing Shield loaded successfully!');
